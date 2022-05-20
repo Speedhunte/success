@@ -1,0 +1,366 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <thread>
+#include <future>
+
+
+using namespace std;
+
+template<typename T>
+class Matrix;
+
+template<typename T>
+void helpsum(const Matrix<T>& a, const Matrix<T>& b, Matrix<T>& finalres, int start, int ending)
+{
+    for (int i = start; i < ending; i++)
+        finalres.data[i / a.N + 1][i % a.N] += a.data[i / a.N + 1][i % a.N] + b.data[i / a.N + 1][i % a.N];
+}
+
+
+
+template<typename T>
+class Matrix {
+
+private:
+    int N;// строки
+    int M;// столбцы
+
+public:
+    vector <vector <T>> data;
+
+    friend void helpsum<T>(const Matrix<T>& a, const Matrix<T>& b, Matrix<T>& finalres, int start, int ending);
+
+
+    void in() { //метод заполняет матрицу значениями из файла
+        cout << "hahhahh";
+        ifstream input("output.txt");
+        if (!input) {
+            cout << "Файл не найден" << endl;
+        }
+        input >> N;
+        input >> M;
+
+        data.resize(N, vector <T>(M));
+        for (int i = 0; i < N; i++)
+        {
+            for (int j = 0; j < M; j++)
+                input >> this->data[i][j];
+        }
+
+
+    }
+
+
+    void out() { //метод выгружает  матрицу и ее размер в файл
+        ofstream output("output.txt ");
+        if (!output)
+            cout << " файл не открывается" << endl;
+
+        output << this->N << endl;
+        output << this->M << endl;
+
+
+        for (int i = 0; i < this->N; i++) {
+
+            for (int j = 0; j < this->M; j++)
+                output << this->data[i][j];
+        }
+        output << endl;
+
+
+    }
+
+
+
+    Matrix(int N, int M) { //конструктор создает матрицу указанного размера и заполняет нулями
+        this->N = N;
+        this->M = M;
+        this->data.resize(N, vector <T>(M));
+        for (int i = 0; i < N; i++)
+            for (int j = 0; j < M; j++)
+                data[i][j] = 0;
+
+    }
+
+
+    Matrix() { //конструктор считывает из файла
+        ifstream input("output.txt");
+
+        if (!input) {
+            cout << "Файл не найден" << endl;
+        }
+        else {
+            input >> N;
+            input >> M;
+            data.resize(N, vector <T>(M));
+
+            for (int i = 0; i < N; i++)
+                for (int j = 0; j < M; j++)
+                    input >> data[i][j];
+        }
+
+    }
+
+
+    Matrix<T> operator *(const Matrix& other) //перегрузка умножения матриц
+    {
+        Matrix <T> temp(other.N, other.M);
+
+        if (this->M != other.N)
+            cout << "Нельзя умножить";
+        else {
+            for (int i = 0; i < other.N; i++) {
+                for (int j = 0; j < other.M; j++) {
+
+                    temp.data[i][j] = 0;
+                    for (int k = 0; k < other.N; k++)
+                        temp.data[i][j] += (this->data[i][k] * other.data[k][j]);
+
+                }
+            }
+            return temp;
+        }
+
+    }
+
+
+
+    Matrix<T> operator *(int a) // прегрузка оператор умножения матрицы на скаляр
+    {
+        Matrix <T> temp(this->N, this->M);
+
+        for (int i = 0; i < this->N; i++) {
+            for (int j = 0; j < this->M; j++)
+            {
+                temp.data[i][j] = 0;
+                temp.data[i][j] += this->data[i][j] * a;
+            }
+        }
+        return temp;
+    }
+
+
+    Matrix<T> operator +(const Matrix<T>& other) //перегрузка сложения матриц
+    {
+        if ((this->N == other.N) && (this->M == other.M))
+        {
+            Matrix <T> temp(this->N, this->M);
+            for (int i = 0; i < this->N; i++) {
+                for (int j = 0; j < this->M; j++) {
+                    temp.data[i][j] = 0;
+                    temp.data[i][j] += (this->data[i][j] + other.data[i][j]);
+                }
+            }
+            return temp;
+        }
+        else {
+            cout << "сложить нельзя" << endl;
+        }
+
+
+    }
+
+
+    Matrix <T> operator -(const Matrix& other) //перегрузка вычитания матриц
+    {
+        if ((this->N = other.N) && (this->M = other.M))
+        {
+            Matrix <T> temp(this->N, this->M);
+            for (int i = 0; i < this->N; i++) {
+                for (int j = 0; j < this->M; j++)
+                    temp.data[i][j] += (this->data[i][j] - other.data[i][j]);
+            }
+            return temp;
+        }
+        else {
+            cout << "вычесть нельзя" << endl;
+        }
+    }
+
+
+    bool operator ==(const Matrix& other) { // проверка на равенство матриц
+
+        if ((this->N == other.N) && (this->M == other.M)) {
+            for (int i = 0; i < this->N; i++) {
+                for (int j = 0; j < this->M; j++) {
+                    if (this->data[i][j] != other.data[i][j])
+                        return false;
+                }
+            }
+
+        }
+    }
+
+
+    Matrix <T> minor(int n, int m)
+    {
+        Matrix<T> temp(N - 1, M - 1);
+        int curi = 0;
+        for (int i = 0; i < N; ++i)
+        {
+            if (i == n) continue;
+            int curj = 0;
+            for (int j = 0; j < M; ++j)
+            {
+                if (j == m) continue;
+                temp.data[curi][curj] = data[i][j];
+                ++curj;
+            }
+            ++curi;
+        }
+        return temp;
+    }
+
+    T det()
+    {
+        if (M != N) {
+            cout << "нельзя найти определитель у неквадратной матрицы" << endl;
+            return 0;
+        }
+        if (M == 2)
+        {
+            return data[0][0] * data[1][1] - data[0][1] * data[1][0];
+        }
+        else
+        {
+            T temp = 0;
+            for (int i = 0; i < M; ++i)
+            {
+                temp += data[0][i] * minor(0, i).det() * (i % 2 == 0 ? 1 : -1);
+            }
+            return temp;
+        }
+    }
+
+    Matrix <T> operator!()
+    {
+        T det = this->det();
+        if (det == 0)
+        {
+            cout << "у матрицы не существует обратной" << endl;
+            return Matrix<T>(N, M);
+        }
+        Matrix<T> res(N, M);
+        for (int i = 0; i < N; ++i)
+            for (int j = 0; j < N; ++j)
+            {
+                res.data[j][i] = minor(i, j).det() * (i + j % 2 == 0 ? 1 : -1) / det;
+            }
+        return res;
+    }
+
+
+
+    bool operator ==(int a) //проверка, является матрица единичной или нулевой
+    {
+        if (a == 1 and this->N == this->M)
+        {
+            for (int i = 0; i < this->N; i++) {
+                for (int j = 0; j < this->M; j++)
+                    if (i == j && this->data[i][j] != 1)
+                        return false;
+                    else {
+                        if (this->data[i][j] != 0)
+                            return false;
+                    }
+
+            }
+        }
+        if (a == 0)
+        {
+            for (int i = 0; i < this->N; i++)
+                for (int j = 0; j < this->M; j++)
+                    if (this->data[i][j] != 0)
+                        return false;
+        }
+        else {
+            cout << "с такими числами не сравниваем" << endl;
+        }
+    }
+
+
+
+    Matrix<T>& operator = (const Matrix<T>& other) //перегрузка оператора присваивания
+    {
+        this->N = other.N;
+        this->M = other.M;
+
+        this->data.resize(N, vector <T>(M));
+        for (int i = 0; i < this->N; i++) {
+            for (int j = 0; j < this->M; j++)
+                this->data[i][j] = other.data[i][j];
+        }
+        return *this;
+    }
+
+
+
+
+    static Matrix<T> Matrix0(int N, int M) // статический метод создания нулевой матрицы
+    {
+        Matrix <T> a(N, M);
+        return a;
+    }
+
+
+    static Matrix<T> Matrix1(int N, int M)// статический метод создания единичной матрицы
+    {
+        if (N == M)
+        {
+            Matrix <T> b(N, M);//вызываем конструктор, который заполнит матрицу нулями
+            for (int i = 0; i < N; i++)
+
+                b.data[i][i] = 1;
+            return b;
+        }
+        else
+        {
+            cout << "нельзя создать единичную матрицу" << endl;
+        }
+
+    }
+
+
+
+
+
+
+    Matrix parallelSum(const Matrix<T>& a, const Matrix<T>& b, int Block) {
+
+        Matrix<T> finalres(a.N, a.M);
+        if (a.N != b.N || a.M != b.M)
+            cout << "нельзя сложить";
+        vector <thread> threads = {};
+
+        for (int i = 0; i < a.N * a.M / Block; i += a.N * a.M / Block)
+            threads.emplace_back(helpsum<T>, ref(a), ref(b), ref(finalres), i, (i + a.N * a.M / Block));
+
+        for (int i = 0; i < threads.size(); i++)
+            threads[i].join();
+        return finalres;
+
+    }
+
+
+};
+
+
+
+
+int main()
+
+{
+    setlocale(LC_ALL, "");
+    Matrix <int> f(5, 5);
+    Matrix <int> d(5, 5);
+    Matrix <int> c(5, 5);
+
+    auto start = chrono::high_resolution_clock::now();
+
+    c = f.parallelSum(d, f, 5);
+
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration <float>duration = end - start;
+    cout«duration.count()«"s"«endl;
+}
