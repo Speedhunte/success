@@ -333,7 +333,7 @@ public:
             cout << "нельзя сложить";
         vector <thread> threads = {};
 
-        for (int i = 0; i < a.N * a.M / Block; i += a.N * a.M / Block)
+        for (int i = 0; i < 5; i += a.N * a.M / Block)
             threads.emplace_back(helpsum<T>, ref(a), ref(b), ref(finalres), i, (i + a.N * a.M / Block));
 
         for (int i = 0; i < threads.size(); i++)
