@@ -342,7 +342,30 @@ public:
 
     }
 
+    Matrix<T>& operator = ( Matrix<T>&& other) // перемещающее присваивание
+    {   
+        if (this == &other)
+            return *this;
+        data.clear();
+        this->N = other.N;
+        this->M = other.M;
 
+        this->data = other.data;;
+        
+        other.N = 0;
+        other.M = 0;
+        other.data.clear();
+        return *this;
+    }
+
+    Matrix <T>(Matrix<T> && other) // перемещающий конструктор
+    {
+        this->data = other.data;
+        this->N = other.N;
+        this->M = other.M;
+        other.data.clear();
+        other.N = other.M = 0 ;
+    }
 };
 
 
